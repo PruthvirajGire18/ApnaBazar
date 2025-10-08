@@ -8,6 +8,7 @@ const BestSeller = () => {
   return (
     // Outer section padding increased: px-4 changed to px-6 for better mobile margins
     <section className="w-full px-6 sm:px-8 md:px-10 py-12 bg-gray-50"> 
+    <p>test</p>
       
       {/* Heading remains the same */}
       <div className="text-center mb-10">
