@@ -18,10 +18,15 @@ const SellerLayout = () => {
   const logout = async() => {
    
     try {
-      axios.get('/api/seller/logout');
+      const {data}=await axios.get('/api/seller/logout');
+      if(data.success){
       setIsSeller(false);
       toast.success("Logged out successfully");
-      navigate('/seller');
+      navigate('/');
+      }
+      else{
+         toast.error("Logout failed. Please try again.");
+      }
       // Optionally, you can add a toast notification here for successful logout
     } catch (error) {
       console.error("Logout failed:", error);

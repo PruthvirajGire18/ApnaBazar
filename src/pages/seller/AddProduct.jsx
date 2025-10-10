@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { assets, categories } from "../../assets/assets";
 import { Camera } from "lucide-react"; // optional icons
+import { UseAppContext } from "../../context/AppContext";
+import toast from "react-hot-toast";
 
 const AddProduct = () => {
   const [files, setFiles] = useState([]);
@@ -9,9 +11,39 @@ const AddProduct = () => {
   const [category, setCategory] = useState("");
   const [price, setPrice] = useState("");
   const [offerPrice, setOfferPrice] = useState("");
+  const { axios } = UseAppContext();
 
   const onSubmitHandler = async (e) => {
-    e.preventDefault();
+    try {
+      e.preventDefault();
+      const productData = {
+        name,
+        description: description.split('\n'),
+        category,
+        price,
+        offerPrice
+      }
+      const formData = new FormData();
+      formData.append('productData', JSON.stringify(productData));
+      for (let i = 0; i < files.length; i++) {
+        formData.append('images', files[i]);
+      }
+      const { data } = await axios.post('/api/product/add', formData)
+      if (data.success) {
+        toast.success("Product added successfully.");
+        setName('')
+        setDescription('')
+        setCategory('')
+        setPrice('')
+        setOfferPrice('')
+        setFiles([])
+      }
+      else {
+        toast.error("Product addition failed. Please try again else block.");
+      }
+    } catch (error) {
+      toast.error("Product addition failed. Please try again catch block.");
+    }
     // Handle submit logic here
   };
 
