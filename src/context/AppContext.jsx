@@ -21,6 +21,19 @@ export const AppContextProvider = ({ children }) => {
     const fetchproduct=()=>{
         setproduct(dummyProducts);
     }
+    const fetchSeller=async()=>{
+        try {
+            const {data}=await axios.get('/api/seller/is-auth');
+            if(data.success){
+                setIsSeller(true);
+            }
+            else{
+                setIsSeller(false);
+            }
+        } catch (error) {
+            console.log(error.message);
+        }
+    }
     const addToCart=(itemId)=>{
         let cartData=structuredClone(cartItems);
         if(cartData[itemId]){
@@ -69,6 +82,7 @@ export const AppContextProvider = ({ children }) => {
     }
     useEffect(()=>{
         fetchproduct();
+        fetchSeller();
     },[])
     const value = {navigate,user,setUser,isSeller,setIsSeller,showUserLogin,setShowUserLogin,products,currency,addToCart,updateCartItem,removeFromCart,cartItems,searchQuery,setsearchQuery,getCartCount,getCartAmount,axios};
     return (<AppContext.Provider value={value}>

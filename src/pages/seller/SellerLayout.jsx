@@ -1,10 +1,13 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { assets } from "../../assets/assets";
 import { useState } from "react";
+import { UseAppContext } from "../../context/AppContext";
+import toast from "react-hot-toast";
 
 const SellerLayout = () => {
   const location = useLocation();
   const [isSeller, setIsSeller] = useState(true); // for logout simulation
+  const {axios,navigate}=UseAppContext();
 
   const sidebarLinks = [
     { name: "Add Product", path: "/seller", icon: "add_icon" },
@@ -12,9 +15,19 @@ const SellerLayout = () => {
     { name: "Orders", path: "/seller/orders", icon: "order_icon" },
   ];
 
-  const logout = () => {
-    setIsSeller(false);
-    
+  const logout = async() => {
+   
+    try {
+      axios.get('/api/seller/logout');
+      setIsSeller(false);
+      toast.success("Logged out successfully");
+      navigate('/seller');
+      // Optionally, you can add a toast notification here for successful logout
+    } catch (error) {
+      console.error("Logout failed:", error);
+      toast.error("Logout failed. Please try again.");
+      // Optionally, you can add a toast notification here for logout failure
+    }
     // Redirect to login if using router
   };
 
