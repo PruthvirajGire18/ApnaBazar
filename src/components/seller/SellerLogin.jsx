@@ -1,10 +1,31 @@
 import React, { useEffect, useState } from "react";
 import { UseAppContext } from "../../context/AppContext";
-
+import toast from "react-hot-toast";
 const SellerLogin = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const { navigate, isSeller, setIsSeller, } = UseAppContext();
+    const { navigate, isSeller, setIsSeller,axios } = UseAppContext();
+
+    const onSubmitHandler = async (e) => {
+        e.preventDefault();
+        // Backend API call for seller login
+        try {
+            console.log('Seller login payload:', { email, password });
+            const { data } = await axios.post('/api/seller/login', { email, password });
+            if (data.success) {
+                setIsSeller(true);
+                toast.success("Seller Login Successfully");
+                navigate('/seller');
+            } else {
+                toast.error(data?.message || 'Login failed');
+            }
+        } catch (error) {
+            console.error('Seller login error:', error);
+            const serverMessage = error?.response?.data?.message;
+            if (serverMessage) toast.error(serverMessage);
+            else toast.error(error.message || 'Login failed');
+        }
+    };
 
     useEffect(() => {
         if (isSeller) {
@@ -12,11 +33,7 @@ const SellerLogin = () => {
         }
     }, [isSeller]);
 
-    const onSubmitHandler = (e) => {
-        e.preventDefault();
-        // Backend API call for seller login will go here
-       setIsSeller(true);
-    };
+   
 
     return !isSeller &&(
         <div className="min-h-screen flex items-center justify-center bg-green-50 px-4">
