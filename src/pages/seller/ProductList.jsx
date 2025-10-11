@@ -1,8 +1,25 @@
+import axios from "axios";
 import { UseAppContext } from "../../context/AppContext";
 import { PackageOpen, IndianRupee } from "lucide-react";
+import toast from "react-hot-toast";
+import { useEffect } from "react";
 
 const ProductList = () => {
-  const { products, currency } = UseAppContext();
+  const { products, currency, fetchproduct } = UseAppContext();
+ const toggleStock = async (id, inStock) => {
+  try {
+    const response = await axios.post('/api/product/stock', { id, inStock });
+    console.log(response.data);
+
+    if (response.status) {
+      toast.success("Stock updated successfully");
+      fetchproduct();
+    }
+  } catch (error) {
+    console.error(error);
+    toast.error("Error while updating stock");
+  }
+};
 
   return (
     <div className="flex-1 py-10 flex flex-col justify-between bg-gray-50 min-h-screen">
@@ -26,7 +43,7 @@ const ProductList = () => {
                 <th className="px-6 py-4 font-semibold">Category</th>
                 <th className="px-6 py-4 font-semibold hidden md:table-cell">Price</th>
                 <th className="px-6 py-4 font-semibold">In Stock</th>
-              </tr>
+              </tr> 
             </thead>
             <tbody className="divide-y divide-gray-100">
               {products.map((product) => (
@@ -37,7 +54,7 @@ const ProductList = () => {
                   <td className="px-6 py-4 flex items-center gap-4">
                     <div className="w-16 h-16 rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
                       <img
-                        src={product.image[0]}
+                        src={product.images[0]}
                         alt={product.name}
                         className="w-full h-full object-cover"
                       />
@@ -63,7 +80,7 @@ const ProductList = () => {
 
                   <td className="px-6 py-4">
                     <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" className="sr-only peer" />
+                      <input onClick={() => toggleStock(product._id, !product.inStock)} checked={product.inStock} type="checkbox" className="sr-only peer" />
                       <div className="w-12 h-6 bg-gray-300 rounded-full peer peer-checked:bg-green-500 transition-all duration-300"></div>
                       <span className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-all duration-300 peer-checked:translate-x-6 shadow"></span>
                     </label>

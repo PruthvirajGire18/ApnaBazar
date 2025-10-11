@@ -18,8 +18,21 @@ export const AppContextProvider = ({ children }) => {
     const [searchQuery,setsearchQuery]=useState({});
 
 
-    const fetchproduct=()=>{
-        setproduct(dummyProducts);
+    const fetchproduct=async()=>{
+        try {
+            const {data}=await axios.get('/api/product/list')
+            // server returns an array of products. accept both formats.
+            if (Array.isArray(data)) {
+                setproduct(data);
+            } else if (data && data.success && Array.isArray(data.products)) {
+                setproduct(data.products);
+            } else {
+                console.error('Unexpected product list response:', data);
+                toast.error("Error while fetching data");
+            }
+        } catch (error) {
+            toast.error("Error while fetching data")
+        }
     }
     const fetchSeller=async()=>{
         try {
@@ -84,7 +97,7 @@ export const AppContextProvider = ({ children }) => {
         fetchproduct();
         fetchSeller();
     },[])
-    const value = {navigate,user,setUser,isSeller,setIsSeller,showUserLogin,setShowUserLogin,products,currency,addToCart,updateCartItem,removeFromCart,cartItems,searchQuery,setsearchQuery,getCartCount,getCartAmount,axios};
+    const value = {navigate,user,setUser,isSeller,setIsSeller,showUserLogin,setShowUserLogin,products,currency,addToCart,updateCartItem,removeFromCart,cartItems,searchQuery,setsearchQuery,getCartCount,getCartAmount,axios,fetchproduct};
     return (<AppContext.Provider value={value}>
         {children}
     </AppContext.Provider>)
