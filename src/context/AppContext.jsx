@@ -10,13 +10,56 @@ axios.defaults.withCredentials=true;
 export const AppContextProvider = ({ children }) => {
     const currency=import.meta.env.VITE_CURRENCY;
     const navigate=useNavigate();
-    const [user,setUser]=useState(null)
-    const [isSeller,setIsSeller]=useState(null)
+    const [user,setUser]=useState(() => {
+        const storedUser = localStorage.getItem("user");
+        return storedUser ? JSON.parse(storedUser) : null;
+    });
+    const [isSeller,setIsSeller]=useState(() => {
+        const storedIsSeller = localStorage.getItem("isSeller");
+        return storedIsSeller ? JSON.parse(storedIsSeller) : null;
+    });
     const [showUserLogin,setShowUserLogin]=useState(false)
     const [products,setproduct]=useState([]);
-    const [cartItems,setcartItems]=useState({});
+    const [cartItems,setcartItems]=useState(() => {
+        const storedCart = localStorage.getItem("cart");
+        return storedCart ? JSON.parse(storedCart) : {};
+    });
     const [searchQuery,setsearchQuery]=useState({});
 
+    useEffect(() => {
+        if (user) {
+            localStorage.setItem("user", JSON.stringify(user));
+        } else {
+            localStorage.removeItem("user");
+        }
+    }, [user]);
+
+    useEffect(() => {
+        localStorage.setItem("cart", JSON.stringify(cartItems));
+    }, [cartItems]);
+
+    useEffect(() => {
+        if (isSeller) {
+            localStorage.setItem("isSeller", JSON.stringify(isSeller));
+        } else {
+            localStorage.removeItem("isSeller");
+        }
+    }, [isSeller]);
+
+    const logout = async () => {
+        try {
+            await axios.get('/api/user/logout');
+            setUser(null);
+            setIsSeller(null);
+            setcartItems({});
+            localStorage.removeItem("user");
+            localStorage.removeItem("cart");
+            localStorage.removeItem("isSeller");
+            navigate('/');
+        } catch (error) {
+            console.log(error.message);
+        }
+    };
 
     const fetchproduct=async()=>{
         try {
@@ -42,6 +85,20 @@ export const AppContextProvider = ({ children }) => {
             }
             else{
                 setIsSeller(false);
+            }
+        } catch (error) {
+            console.log(error.message);
+        }
+    }
+    const fetchUser=async()=>{
+        try {
+            const {data}=await axios.get('/api/user/is-auth');
+            if(data.success){
+                setUser(data.user);
+            }
+            else{
+                setUser(null);
+                setIsSeller(null);
             }
         } catch (error) {
             console.log(error.message);
@@ -86,7 +143,7 @@ export const AppContextProvider = ({ children }) => {
         let totalAmount=0;
         for(const items in cartItems){
             let itemInfo=products.find((product)=>product._id===items);
-            if(cartItems[items]>0){
+            if(itemInfo && cartItems[items]>0){
                 totalAmount+=itemInfo.offerPrice*cartItems[items]
 
             }
@@ -96,8 +153,9 @@ export const AppContextProvider = ({ children }) => {
     useEffect(()=>{
         fetchproduct();
         fetchSeller();
+        fetchUser();
     },[])
-    const value = {navigate,user,setUser,isSeller,setIsSeller,showUserLogin,setShowUserLogin,products,currency,addToCart,updateCartItem,removeFromCart,cartItems,searchQuery,setsearchQuery,getCartCount,getCartAmount,axios,fetchproduct};
+    const value = {navigate,user,setUser,isSeller,setIsSeller,showUserLogin,setShowUserLogin,products,currency,addToCart,updateCartItem,removeFromCart,cartItems,searchQuery,setsearchQuery,getCartCount,getCartAmount,axios,fetchproduct,fetchUser,fetchSeller,logout};
     return (<AppContext.Provider value={value}>
         {children}
     </AppContext.Provider>)
