@@ -1,14 +1,60 @@
 import { useEffect, useState } from "react";
 import { UseAppContext } from "../../context/AppContext";
-import { assets, dummyOrders } from "../../assets/assets";
+import { assets } from "../../assets/assets";
 import { Package, IndianRupee, Calendar, MapPin, Phone, Mail } from "lucide-react";
+import toast from "react-hot-toast";
 
 const Order = () => {
-  const { currency } = UseAppContext();
+  const { currency, axios } = UseAppContext();
   const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const fetchOrders = () => {
-    setOrders(dummyOrders);
+  const fetchOrders = async () => {
+    setLoading(true);
+    try {
+      const {data} = await axios.get('/api/order/seller');
+      console.log('Orders response:', data);
+      
+      if(data && data.success){
+        setOrders(Array.isArray(data.orders) ? data.orders : []);
+        if(data.count === 0){
+          console.log('No orders found');
+        }
+      } else {
+        const errorMsg = data?.message || "Failed to fetch orders";
+        console.error('Failed to fetch orders:', errorMsg);
+        toast.error(errorMsg);
+        setOrders([]);
+      }
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+      console.error('Error response:', error.response);
+      
+      const errorMessage = error.response?.data?.message || error.message || "Error fetching orders";
+      
+      // Check if it's an authentication error
+      if(error.response?.status === 401){
+        toast.error("Please login as seller to view orders");
+      } else {
+        toast.error(errorMessage);
+      }
+      
+      setOrders([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateOrderStatus = async (orderId, status) => {
+    try {
+      const {data} = await axios.post('/api/order/status', {orderId, status});
+      if(data.success){
+        toast.success("Order status updated");
+        fetchOrders();
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Error updating order status");
+    }
   };
 
   useEffect(() => {
@@ -22,7 +68,11 @@ const Order = () => {
         Orders List
       </h2>
 
-      {orders.length === 0 ? (
+      {loading ? (
+        <div className="flex flex-col items-center justify-center h-80 text-center">
+          <p className="text-gray-600 text-lg font-medium">Loading orders...</p>
+        </div>
+      ) : orders.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-80 text-center">
           <img
             src="https://cdni.iconscout.com/illustration/premium/thumb/no-orders-6773746-5647822.png"
@@ -64,29 +114,33 @@ const Order = () => {
                   <h4 className="font-semibold text-gray-700 mb-1 flex items-center gap-2">
                     <Package className="w-4 h-4 text-green-600" /> Items
                   </h4>
-                  {order.items.map((item, i) => (
+                  {Array.isArray(order.items) && order.items.map((item, i) => {
+                    const product = item.product;
+                    if(!product) return null;
+                    return (
                     <div
                       key={i}
                       className="flex items-center gap-3 bg-gray-50 p-2 rounded-lg"
                     >
                       <img
-                        src={item.product.image[0] || assets.box_icon}
-                        alt={item.product.name}
+                        src={product.images?.[0] || product.image?.[0] || assets.box_icon}
+                        alt={product.name}
                         className="w-14 h-14 object-cover rounded-md border"
                       />
                       <div>
                         <p className="font-medium text-gray-800">
-                          {item.product.name}
+                          {product.name}
                         </p>
                         <p className="text-sm text-gray-500 capitalize">
                           Qty: {item.quantity}
                         </p>
                       </div>
                     </div>
-                  ))}
+                  )})}
                 </div>
 
                 {/* Address */}
+                {order.address && (
                 <div className="text-sm text-gray-700 space-y-1">
                   <h4 className="font-semibold mb-1 flex items-center gap-2">
                     <MapPin className="w-4 h-4 text-green-600" /> Address
@@ -96,7 +150,7 @@ const Order = () => {
                   </p>
                   <p className="text-gray-600">
                     {order.address.street}, {order.address.city},{" "}
-                    {order.address.state} - {order.address.zipcode}
+                    {order.address.state} - {order.address.zipCode || order.address.zipcode}
                   </p>
                   <p className="text-gray-600">{order.address.country}</p>
                   <p className="flex items-center gap-1 text-gray-600">
@@ -108,6 +162,7 @@ const Order = () => {
                     {order.address.email}
                   </p>
                 </div>
+                )}
 
                 {/* Payment Info */}
                 <div className="text-sm text-gray-700 space-y-2">
@@ -115,7 +170,7 @@ const Order = () => {
                   <p>Method: {order.paymentType}</p>
                   <p className="flex items-center gap-1">
                     <Calendar className="w-4 h-4 text-green-600" />{" "}
-                    {new Date(order.orderDate).toLocaleDateString()}
+                    {new Date(order.createdAt || order.orderDate).toLocaleDateString()}
                   </p>
                   <p className="font-medium text-gray-800">
                     <IndianRupee className="w-4 h-4 inline text-green-600" />
@@ -127,16 +182,23 @@ const Order = () => {
                 <div className="flex flex-col items-center justify-center gap-3">
                   <select
                     className="border border-gray-300 rounded-lg px-3 py-2 outline-none text-sm cursor-pointer hover:border-green-500 transition"
-                    defaultValue={order.status || "Pending"}
+                    value={order.status || "Order Placed"}
+                    onChange={(e) => updateOrderStatus(order._id, e.target.value)}
                   >
-                    <option>Pending</option>
-                    <option>Processing</option>
-                    <option>Delivered</option>
-                    <option>Cancelled</option>
+                    <option value="Order Placed">Order Placed</option>
+                    <option value="Confirmed">Confirmed</option>
+                    <option value="Preparing">Preparing</option>
+                    <option value="Out for Delivery">Out for Delivery</option>
+                    <option value="Delivered">Delivered</option>
+                    <option value="Cancelled">Cancelled</option>
                   </select>
-                  <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">
-                    Update
-                  </button>
+                  <span className={`px-3 py-1 text-xs font-medium rounded-full ${
+                    order.status === "Delivered" ? "bg-green-200 text-green-800" :
+                    order.status === "Cancelled" ? "bg-red-200 text-red-800" :
+                    "bg-yellow-200 text-yellow-800"
+                  }`}>
+                    {order.status || "Order Placed"}
+                  </span>
                 </div>
               </div>
             </div>

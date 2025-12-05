@@ -18,21 +18,47 @@ import SellerLayout from './pages/seller/SellerLayout';
 import AddProduct from './pages/seller/AddProduct';
 import ProductList from './pages/seller/ProductList';
 import Orders from './pages/seller/Orders';
+import OrderTracking from './pages/OrderTracking';
+import Wishlist from './pages/Wishlist';
 
 const App = () => {
   const isSellerPath = useLocation().pathname.includes("seller");
   const { showUserLogin, setShowUserLogin,isSeller } = UseAppContext();
 
   return (
-    <div className=' text-default-bg min-h-screen text-gray-700 bg-white'>
+    <div className='text-default-bg min-h-screen text-gray-700 bg-gradient-to-br from-gray-50 via-white to-gray-50'>
       {isSellerPath ? null : <Navbar />}
-      <Toaster />
+      {isSellerPath ? null : <div className="h-20"></div>}
+      <Toaster 
+        position="top-right"
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: '#fff',
+            color: '#333',
+            borderRadius: '12px',
+            boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+          },
+          success: {
+            iconTheme: {
+              primary: '#10b981',
+              secondary: '#fff',
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: '#fff',
+            },
+          },
+        }}
+      />
 
       {/* Login Overlay */}
       {showUserLogin && <Login setShowUserLogin={setShowUserLogin} />}
 
       {/* Main Content */}
-      <div className={`${isSellerPath ? "" : "px-6 md:px-15 lg:px-24 xl:px-32"} ${showUserLogin ? "pointer-events-none select-none" : ""}`}>
+      <div className={`${isSellerPath ? "" : "px-3 sm:px-4 md:px-6 lg:px-12 xl:px-24 2xl:px-32"} ${showUserLogin ? "pointer-events-none select-none" : ""}`}>
         <Routes>
           <Route path='/' element={<Home />} />
           <Route path='/products' element={<AllProduct/>}/>
@@ -41,10 +67,16 @@ const App = () => {
           <Route path='/cart' element={<Cart/>}/>
           <Route path='/add-address' element={<AddAddress/>}/>
           <Route path='/my-orders' element={<MyOrders/>}/>
-          <Route path='/seller' element={isSeller?<SellerLayout/>:<SellerLogin/>}>
-          <Route index element={isSeller?<AddProduct/>:null}/>
-          <Route path='products-list' element={isSeller?<ProductList/>:null}/>
-          <Route path='orders' element={<Orders/>}/>
+          <Route path='/wishlist' element={<Wishlist/>}/>
+          <Route path='/track-order/:trackingNumber' element={<OrderTracking/>}/>
+          <Route path='/seller' element={isSeller === true ? <SellerLayout/> : <SellerLogin/>}>
+            {isSeller === true && (
+              <>
+                <Route index element={<AddProduct/>}/>
+                <Route path='products-list' element={<ProductList/>}/>
+                <Route path='orders' element={<Orders/>}/>
+              </>
+            )}
           </Route>
         </Routes>
         {isSellerPath ? null : <Footer />}

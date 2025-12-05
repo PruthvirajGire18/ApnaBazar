@@ -1,34 +1,38 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { UseAppContext } from "../context/AppContext";
+import toast from "react-hot-toast";
 
 const AddAddress = () => {
   const navigate = useNavigate();
+  const {axios,user} = UseAppContext();
+  const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
-    fullName: "",
+    firstName: "",
+    lastName: "",
     email: "",
     phone: "",
-    house: "",
     street: "",
     city: "",
     state: "",
-    pincode: "",
+    zipCode: "",
     country: "",
-    landmark: "",
-    addressType: "Home",
   });
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
 
     // Check for empty fields
     for (const key in formData) {
       if (formData[key] === "") {
-        alert("Please fill all fields");
+        toast.error("Please fill all fields");
+        setLoading(false);
         return;
       }
     }
@@ -36,15 +40,22 @@ const AddAddress = () => {
     // Simple email validation
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailPattern.test(formData.email)) {
-      alert("Please enter a valid email address");
+      toast.error("Please enter a valid email address");
+      setLoading(false);
       return;
     }
 
-    // Save locally or send to backend
-    localStorage.setItem("userAddress", JSON.stringify(formData));
-
-    alert("Address added successfully ✅");
-    navigate("/cart");
+    try {
+      const {data} = await axios.post('/api/address/add', formData);
+      if(data.success){
+        toast.success("Address added successfully ✅");
+        navigate("/cart");
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Error adding address");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -55,15 +66,38 @@ const AddAddress = () => {
         </h1>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Full name + Phone */}
+          {/* First name + Last name */}
           <div className="grid grid-cols-2 gap-4">
             <input
               type="text"
-              name="fullName"
-              value={formData.fullName}
+              name="firstName"
+              value={formData.firstName}
               onChange={handleChange}
-              placeholder="Full Name"
+              placeholder="First Name"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-green-500"
+              required
+            />
+            <input
+              type="text"
+              name="lastName"
+              value={formData.lastName}
+              onChange={handleChange}
+              placeholder="Last Name"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-green-500"
+              required
+            />
+          </div>
+
+          {/* Email + Phone */}
+          <div className="grid grid-cols-2 gap-4">
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="Email Address"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-green-500"
+              required
             />
             <input
               type="text"
@@ -72,29 +106,11 @@ const AddAddress = () => {
               onChange={handleChange}
               placeholder="Phone Number"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-green-500"
+              required
             />
           </div>
 
-          {/* Email */}
-          <input
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            placeholder="Email Address"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-green-500"
-          />
-
           {/* Address Fields */}
-          <input
-            type="text"
-            name="house"
-            value={formData.house}
-            onChange={handleChange}
-            placeholder="Flat / House No."
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-green-500"
-          />
-
           <input
             type="text"
             name="street"
@@ -102,6 +118,7 @@ const AddAddress = () => {
             onChange={handleChange}
             placeholder="Street / Area / Colony"
             className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-green-500"
+            required
           />
 
           <div className="grid grid-cols-2 gap-4">
@@ -125,12 +142,13 @@ const AddAddress = () => {
 
           <div className="grid grid-cols-2 gap-4">
             <input
-              type="text"
-              name="pincode"
-              value={formData.pincode}
+              type="number"
+              name="zipCode"
+              value={formData.zipCode}
               onChange={handleChange}
-              placeholder="Pincode"
+              placeholder="Zip Code"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-green-500"
+              required
             />
             <input
               type="text"
@@ -139,53 +157,17 @@ const AddAddress = () => {
               onChange={handleChange}
               placeholder="Country"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-green-500"
+              required
             />
-          </div>
-
-          <input
-            type="text"
-            name="landmark"
-            value={formData.landmark}
-            onChange={handleChange}
-            placeholder="Nearby Landmark (Optional)"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-green-500"
-          />
-
-          {/* Address Type */}
-          <div>
-            <label className="block text-gray-700 mb-2 text-sm font-medium">
-              Address Type
-            </label>
-            <div className="flex gap-3">
-              {["Home", "Work", "Other"].map((type) => (
-                <label
-                  key={type}
-                  className={`flex items-center gap-2 border px-4 py-2 rounded-lg cursor-pointer ${
-                    formData.addressType === type
-                      ? "border-green-600 bg-green-50 text-green-700"
-                      : "border-gray-300 text-gray-600"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="addressType"
-                    value={type}
-                    checked={formData.addressType === type}
-                    onChange={handleChange}
-                    className="accent-green-600"
-                  />
-                  {type}
-                </label>
-              ))}
-            </div>
           </div>
 
           {/* Buttons */}
           <button
             type="submit"
-            className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition duration-200"
+            disabled={loading}
+            className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Save Address
+            {loading ? "Saving..." : "Save Address"}
           </button>
 
           <button

@@ -31,11 +31,15 @@ const SellerLogin = () => {
         if (isSeller) {
             navigate("/seller");
         }
-    }, [isSeller]);
+    }, [isSeller, navigate]);
 
-   
+    // Always render login form if not seller
+    // If isSeller is null/undefined/false, show login form
+    if(isSeller === true) {
+        return null; // Will redirect via useEffect
+    }
 
-    return !isSeller &&(
+    return (
         <div className="min-h-screen flex items-center justify-center bg-green-50 px-4">
             <div className="max-w-md w-full bg-white rounded-2xl shadow-lg p-8">
                 <h1 className="text-3xl font-bold text-center text-green-700 mb-6">
