@@ -5,15 +5,9 @@ import toast from "react-hot-toast";
 import axios from "axios";
 export const AppContext = createContext();
 
-// Use proxy in development (vite.config.js), or env variable in production
-// In development: uses vite proxy to http://localhost:5000
-// In production: uses deployed backend URL
-if(import.meta.env.VITE_BACKEND_URL) {
-    axios.defaults.baseURL = import.meta.env.VITE_BACKEND_URL;
-} else if(import.meta.env.MODE === 'production' || import.meta.env.PROD) {
-    // Use deployed backend URL in production
-    axios.defaults.baseURL = 'https://apna-bazar-backend.vercel.app';
-}
+// Always use deployed backend URL
+// If VITE_BACKEND_URL is set in .env, use that, otherwise use default deployed URL
+axios.defaults.baseURL = import.meta.env.VITE_BACKEND_URL || 'https://apna-bazar-backend.vercel.app';
 axios.defaults.withCredentials=true;
 axios.defaults.headers.common['Content-Type'] = 'application/json';
 
