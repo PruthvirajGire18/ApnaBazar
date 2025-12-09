@@ -13,7 +13,21 @@ if(import.meta.env.VITE_BACKEND_URL && import.meta.env.MODE === 'production') {
 axios.defaults.withCredentials=true;
 axios.defaults.headers.common['Content-Type'] = 'application/json';
 
-// Add request interceptor for error handling
+// Add request interceptor to handle FormData correctly
+axios.interceptors.request.use(
+    (config) => {
+        // If data is FormData, remove Content-Type header to let browser set it with boundary
+        if (config.data instanceof FormData) {
+            delete config.headers['Content-Type'];
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    }
+);
+
+// Add response interceptor for error handling
 axios.interceptors.response.use(
     (response) => response,
     (error) => {

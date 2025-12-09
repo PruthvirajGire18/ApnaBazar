@@ -16,19 +16,49 @@ const AddProduct = () => {
   const onSubmitHandler = async (e) => {
     try {
       e.preventDefault();
-      const productData = {
-        name,
-        description: description.split('\n'),
-        category,
-        price,
-        offerPrice
+      
+      // Validate required fields
+      if (!name.trim()) {
+        toast.error("Please enter product name");
+        return;
       }
+      if (!category) {
+        toast.error("Please select a category");
+        return;
+      }
+      if (!price || parseFloat(price) <= 0) {
+        toast.error("Please enter a valid price");
+        return;
+      }
+      if (!offerPrice || parseFloat(offerPrice) <= 0) {
+        toast.error("Please enter a valid offer price");
+        return;
+      }
+      
+      // Filter out undefined/null files and validate
+      const validFiles = files.filter(file => file != null);
+      if (validFiles.length === 0) {
+        toast.error("Please upload at least one product image");
+        return;
+      }
+      
+      const productData = {
+        name: name.trim(),
+        description: description.trim() ? description.split('\n').filter(line => line.trim()) : ['No description'],
+        category,
+        price: parseFloat(price),
+        offerPrice: parseFloat(offerPrice)
+      }
+      
       const formData = new FormData();
       formData.append('productData', JSON.stringify(productData));
-      for (let i = 0; i < files.length; i++) {
-        formData.append('images', files[i]);
-      }
-      const { data } = await axios.post('/api/product/add', formData)
+      validFiles.forEach(file => {
+        formData.append('images', file);
+      });
+      
+      // Request interceptor in AppContext will handle Content-Type for FormData
+      const { data } = await axios.post('/api/product/add', formData);
+      
       if (data.success) {
         toast.success("Product added successfully.");
         setName('')
@@ -39,12 +69,14 @@ const AddProduct = () => {
         setFiles([])
       }
       else {
-        toast.error("Product addition failed. Please try again else block.");
+        const errorMsg = data?.message || "Product addition failed. Please try again.";
+        toast.error(errorMsg);
       }
     } catch (error) {
-      toast.error("Product addition failed. Please try again catch block.");
+      console.error('Product addition error:', error);
+      const errorMsg = error.response?.data?.message || error.message || "Product addition failed. Please try again.";
+      toast.error(errorMsg);
     }
-    // Handle submit logic here
   };
 
   return (
