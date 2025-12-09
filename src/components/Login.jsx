@@ -7,9 +7,6 @@ const Login = ({ setShowUserLogin }) => {
   const [name, setName] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
-  const [phone, setPhone] = React.useState("");
-  const [otp, setOtp] = React.useState("");
-  const [otpSent, setOtpSent] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
 
   const handleClose = () => setShowUserLogin(false);
@@ -19,48 +16,6 @@ const Login = ({ setShowUserLogin }) => {
     // In production, integrate with Google OAuth
     // For now, this is a placeholder
     toast.error("Google login integration pending. Please use email/password.");
-  };
-
-  const handleSendOTP = async () => {
-    if (!phone || phone.length !== 10) {
-      toast.error("Please enter a valid 10-digit phone number");
-      return;
-    }
-    setLoading(true);
-    try {
-      const { data } = await axios.post('/api/user/send-otp', { phone });
-      if (data.success) {
-        setOtpSent(true);
-        toast.success("OTP sent successfully!");
-        if (data.otp) {
-          toast.info(`OTP: ${data.otp} (Development mode)`);
-        }
-      }
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Error sending OTP");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleVerifyOTP = async () => {
-    if (!otp || otp.length !== 6) {
-      toast.error("Please enter a valid 6-digit OTP");
-      return;
-    }
-    setLoading(true);
-    try {
-      const { data } = await axios.post('/api/user/verify-otp', { phone, otp });
-      if (data.success) {
-        setUser(data.user);
-        toast.success("Logged in successfully!");
-        setShowUserLogin(false);
-      }
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Invalid OTP");
-    } finally {
-      setLoading(false);
-    }
   };
   const handleSubmit=async(e)=>{
     e.preventDefault();
@@ -160,69 +115,8 @@ const Login = ({ setShowUserLogin }) => {
             </div>
           </div>
 
-          {/* OTP Login Section */}
-          {state === "login" && (
-            <div className="border-t border-gray-200 pt-4">
-              <p className="text-xs text-center text-gray-500 mb-3">OR</p>
-              {!otpSent ? (
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">Phone Number</label>
-                    <input
-                      onChange={(e) => setPhone(e.target.value)}
-                      value={phone}
-                      placeholder="Enter 10-digit phone number"
-                      className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border-2 border-gray-200 rounded-lg sm:rounded-xl focus:border-green-500 focus:ring-2 sm:focus:ring-4 focus:ring-green-500/10 outline-none transition-all bg-gray-50 focus:bg-white"
-                      type="tel"
-                      maxLength="10"
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleSendOTP}
-                    disabled={loading || !phone || phone.length !== 10}
-                    className="w-full py-2.5 sm:py-3 text-sm sm:text-base bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg sm:rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Send OTP
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">Enter OTP</label>
-                    <input
-                      onChange={(e) => setOtp(e.target.value)}
-                      value={otp}
-                      placeholder="Enter 6-digit OTP"
-                      className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border-2 border-gray-200 rounded-lg sm:rounded-xl focus:border-green-500 focus:ring-2 sm:focus:ring-4 focus:ring-green-500/10 outline-none transition-all bg-gray-50 focus:bg-white"
-                      type="text"
-                      maxLength="6"
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => { setOtpSent(false); setOtp(""); }}
-                      className="flex-1 py-2.5 sm:py-3 text-sm sm:text-base border-2 border-gray-300 text-gray-700 font-semibold rounded-lg sm:rounded-xl hover:bg-gray-50 transition-colors"
-                    >
-                      Change Number
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleVerifyOTP}
-                      disabled={loading || !otp || otp.length !== 6}
-                      className="flex-1 py-2.5 sm:py-3 text-sm sm:text-base bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg sm:rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Verify OTP
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
           {/* Social Login */}
-          {state === "login" && !otpSent && (
+          {state === "login" && (
             <div className="border-t border-gray-200 pt-4">
               <p className="text-xs text-center text-gray-500 mb-3">OR</p>
               <button
